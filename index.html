@@ -1,0 +1,369 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>КиноКомедия — Мир комедий</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f8f7fc;
+            color: #252039;
+        }
+
+        .site-header {
+            background: white;
+            padding: 20px 6%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+        }
+
+        .site-logo {
+            font-size: 23px;
+            font-weight: bold;
+            color: #7048ce;
+        }
+
+        .site-nav {
+            display: flex;
+            gap: 25px;
+            flex-wrap: wrap;
+        }
+
+        .site-nav a {
+            color: #353044;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .site-nav a:hover {
+            color: #7048ce;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, #7048ce, #a17aec);
+            color: white;
+            text-align: center;
+            padding: 85px 20px;
+        }
+
+        .hero h1 {
+            font-size: 42px;
+            margin-bottom: 15px;
+        }
+
+        .hero p {
+            font-size: 18px;
+            max-width: 650px;
+            margin: 0 auto 30px;
+            line-height: 1.6;
+        }
+
+        .hero-button {
+            display: inline-block;
+            padding: 15px 28px;
+            border-radius: 12px;
+            background: white;
+            color: #7048ce;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .hero-button:hover {
+            background: #f0eafa;
+        }
+
+        .section {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 55px 24px;
+        }
+
+        .section h2 {
+            font-size: 30px;
+            margin-bottom: 12px;
+        }
+
+        .section-description {
+            color: #777184;
+            margin-bottom: 28px;
+        }
+
+        .search-input {
+            width: 100%;
+            max-width: 500px;
+            padding: 15px 18px;
+            border: 1px solid #ddd6eb;
+            border-radius: 12px;
+            font-size: 16px;
+            box-sizing: border-box;
+            margin-bottom: 30px;
+        }
+
+        .films-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 22px;
+        }
+
+        .film-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 5px 20px rgba(40,20,80,0.06);
+            transition: transform 0.2s;
+        }
+
+        .film-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .film-icon {
+            font-size: 38px;
+            margin-bottom: 15px;
+        }
+
+        .film-card h3 {
+            margin: 0 0 18px;
+            font-size: 19px;
+            line-height: 1.4;
+        }
+
+        .film-card p {
+            color: #706b7a;
+            margin: 9px 0;
+            font-size: 14px;
+        }
+
+        .film-rating {
+            color: #7048ce;
+            font-weight: bold;
+        }
+
+        .graph-banner {
+            background: #eee8fc;
+            border-radius: 22px;
+            padding: 40px;
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        .graph-banner h2 {
+            color: #5633a5;
+        }
+
+        .graph-button {
+            display: inline-block;
+            background: #7048ce;
+            color: white;
+            padding: 15px 28px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+
+        .about {
+            background: white;
+            border-radius: 18px;
+            padding: 35px;
+            line-height: 1.8;
+        }
+
+        footer {
+            background: #28213e;
+            color: white;
+            text-align: center;
+            padding: 25px;
+            margin-top: 40px;
+        }
+
+        @media (max-width: 600px) {
+            .hero h1 {
+                font-size: 30px;
+            }
+
+            .site-nav {
+                gap: 14px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Верхнее меню -->
+    <header class="site-header">
+        <div class="site-logo">🎬 КиноКомедия</div>
+
+        <nav class="site-nav">
+            <a href="/">Главная</a>
+            <a href="#catalog">Каталог</a>
+            <a href="/graph">Карта знаний</a>
+            <a href="#about">О проекте</a>
+        </nav>
+    </header>
+
+    <!-- Главный баннер -->
+    <section class="hero">
+        <h1>Добро пожаловать в мир комедий!</h1>
+
+        <p>
+            Открой для себя лучшие комедийные фильмы,
+            узнай об актёрах и режиссёрах и исследуй
+            связи между фильмами на интерактивной карте знаний.
+        </p>
+
+        <a href="#catalog" class="hero-button">
+            Смотреть каталог
+        </a>
+    </section>
+
+    <!-- Каталог фильмов -->
+    <section class="section" id="catalog">
+
+        <h2>🍿 Каталог комедий</h2>
+
+        <p class="section-description">
+            Коллекция комедийных фильмов из нашей базы знаний.
+        </p>
+
+        <input
+            type="text"
+            id="filmSearch"
+            class="search-input"
+            placeholder="🔍 Поиск фильма по названию..."
+        >
+
+        <div class="films-grid" id="filmsGrid">
+
+            {% for film in films %}
+
+            <div class="film-card">
+
+                <div class="film-icon">🎬</div>
+
+                <h3>{{ film.title }}</h3>
+
+                <p>
+                    📅 Год выпуска:
+                    {{ film.year }}
+                </p>
+
+                <p>
+                    🌍 Страна:
+                    {{ film.country or "Не указана" }}
+                </p>
+
+                <p>
+                    ⭐ Рейтинг:
+                    <span class="film-rating">
+                        {{ film.rating if film.rating is not none else "Нет оценки" }}
+                    </span>
+                </p>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+        <p id="noResults" style="display:none; color:#777184;">
+            По вашему запросу фильмы не найдены.
+        </p>
+
+        <!-- Переход к карте -->
+        <div class="graph-banner">
+
+            <h2>🕸️ Исследуй карту знаний</h2>
+
+            <p>
+                Узнай, как связаны между собой комедийные фильмы,
+                актёры, режиссёры и жанры.
+            </p>
+
+            <a href="/graph" class="graph-button">
+                Открыть карту знаний
+            </a>
+
+        </div>
+
+    </section>
+
+    <!-- О проекте -->
+    <section class="section" id="about">
+
+        <div class="about">
+
+            <h2>💜 О проекте</h2>
+
+            <p>
+                «КиноКомедия» — информационная система,
+                разработанная в рамках курсовой работы
+                по дисциплине «Проектирование базы знаний».
+            </p>
+
+            <p>
+                Система позволяет просматривать каталог
+                комедийных фильмов, выполнять поиск
+                и исследовать связи между фильмами,
+                актёрами, режиссёрами и жанрами
+                с помощью интерактивной карты знаний.
+            </p>
+
+            <p>
+                Для хранения информации используется
+                Microsoft SQL Server, серверная часть
+                реализована на Python и Flask,
+                а визуализация связей — с помощью Cytoscape.js.
+            </p>
+
+        </div>
+
+    </section>
+
+    <!-- Подвал -->
+    <footer>
+        © 2026 КиноКомедия | Курсовой проект
+    </footer>
+
+    <!-- Поиск фильмов -->
+    <script>
+        const searchInput = document.getElementById("filmSearch");
+        const filmCards = document.querySelectorAll(".film-card");
+        const noResults = document.getElementById("noResults");
+
+        searchInput.addEventListener("input", function () {
+            const searchText = this.value.toLowerCase().trim();
+            let visibleCount = 0;
+
+            filmCards.forEach(function (card) {
+                const title = card.querySelector("h3")
+                    .textContent.toLowerCase();
+
+                if (title.includes(searchText)) {
+                    card.style.display = "";
+                    visibleCount++;
+                } else {
+                    card.style.display = "none";
+                }
+            });
+
+            noResults.style.display =
+                visibleCount === 0 ? "block" : "none";
+        });
+    </script>
+
+</body>
+</html>

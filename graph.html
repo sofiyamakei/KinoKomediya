@@ -1,0 +1,875 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Карта знаний — КиноКомедия</title>
+
+    <script src="https://unpkg.com/cytoscape@3.30.4/dist/cytoscape.min.js"></script>
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f8f7fc;
+            color: #29243a;
+        }
+
+        header {
+            background: white;
+            padding: 20px 6%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+        }
+
+        .logo {
+            color: #7048ce;
+            font-size: 23px;
+            font-weight: bold;
+        }
+
+        nav {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        nav a {
+            color: #353044;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        nav a:hover { color: #7048ce; }
+
+        main {
+            max-width: 1450px;
+            margin: auto;
+            padding: 35px 24px;
+        }
+
+        h1 { margin-bottom: 10px; }
+
+        .subtitle {
+            color: #777184;
+            line-height: 1.6;
+        }
+
+        .legend, .toolbar {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .legend { gap: 22px; }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .dot {
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+        }
+
+        .film { background: #7048ce; }
+        .person { background: #36a879; }
+        .genre { background: #4b91e2; }
+
+        input, select {
+            background: white;
+            padding: 13px 15px;
+            border: 1px solid #ddd5ee;
+            border-radius: 10px;
+            font-size: 15px;
+        }
+
+        input { min-width: 230px; }
+
+        button {
+            background: #7048ce;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 13px 18px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover { background: #5933b3; }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 350px;
+            gap: 20px;
+        }
+
+        .graph-container {
+            position: relative;
+            min-width: 0;
+        }
+
+        #cy {
+            width: 100%;
+            height: 680px;
+            background: #fff;
+            border: 1px solid #e6e0f2;
+            border-radius: 18px;
+        }
+
+        .tooltip {
+            position: absolute;
+            z-index: 10;
+            display: none;
+            pointer-events: none;
+            background: #29243a;
+            color: white;
+            padding: 9px 13px;
+            border-radius: 9px;
+            font-size: 13px;
+            max-width: 250px;
+            overflow-wrap: anywhere;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+        }
+
+        .sidebar {
+            background: white;
+            padding: 24px;
+            border: 1px solid #e6e0f2;
+            border-radius: 18px;
+            max-height: 680px;
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            font-size: 21px;
+            margin-top: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .detail {
+            margin: 13px 0;
+            line-height: 1.6;
+        }
+
+        .detail strong { color: #7048ce; }
+
+        .related-list {
+            padding-left: 20px;
+            line-height: 1.8;
+        }
+
+        .related-list li { margin-bottom: 5px; }
+
+        .hint, .status {
+            color: #777184;
+            line-height: 1.6;
+        }
+
+        .status { font-size: 13px; }
+
+        .recommendations {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #e6e0f2;
+        }
+
+        .recommendations h3 { color: #5633a5; }
+
+        .recommendation-card {
+            background: #f5f1ff;
+            border: 1px solid #e7defa;
+            border-radius: 14px;
+            padding: 15px;
+            margin-bottom: 12px;
+        }
+
+        .recommendation-title {
+            display: block;
+            background: none;
+            color: #5633a5;
+            padding: 0;
+            text-align: left;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .recommendation-title:hover {
+            background: none;
+            color: #7048ce;
+            text-decoration: underline;
+        }
+
+        .recommendation-meta {
+            color: #777184;
+            font-size: 13px;
+            margin: 8px 0;
+        }
+
+        .recommendation-score {
+            display: inline-block;
+            background: #7048ce;
+            color: white;
+            padding: 5px 9px;
+            border-radius: 8px;
+            font-size: 12px;
+        }
+
+        .recommendation-reasons {
+            padding-left: 18px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 850px) {
+            .workspace { grid-template-columns: 1fr; }
+            #cy { height: 450px; }
+            .sidebar { max-height: none; }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="logo">🎬 КиноКомедия</div>
+        <nav>
+            <a href="/">Главная</a>
+            <a href="/#catalog">Каталог</a>
+            <a href="/graph">Карта знаний</a>
+            <a href="/#about">О проекте</a>
+        </nav>
+    </header>
+
+    <main>
+        <h1>🕸️ Интерактивная карта знаний</h1>
+
+        <p class="subtitle">
+            Исследуй связи между комедийными фильмами,
+            актёрами, режиссёрами и жанрами.
+            Наведи курсор на кружочек, чтобы увидеть его название.
+        </p>
+
+        <div class="legend">
+            <div class="legend-item">
+                <span class="dot film"></span> Фильмы
+            </div>
+            <div class="legend-item">
+                <span class="dot person"></span> Актёры и режиссёры
+            </div>
+            <div class="legend-item">
+                <span class="dot genre"></span> Жанры
+            </div>
+        </div>
+
+        <div class="toolbar">
+            <input
+                type="search"
+                id="searchInput"
+                placeholder="Поиск фильма, актёра, жанра..."
+            >
+
+            <button id="searchButton">🔍 Найти</button>
+
+            <select id="filterSelect">
+                <option value="all">Все объекты</option>
+                <option value="genres">Фильмы и жанры</option>
+                <option value="people">Фильмы и люди</option>
+            </select>
+
+            <button id="resetButton">Показать всё</button>
+            <button id="zoomInButton">＋</button>
+            <button id="zoomOutButton">－</button>
+        </div>
+
+        <p class="status" id="statusText">
+            Нажми на кружочек, чтобы выделить его связи.
+        </p>
+
+        <div class="workspace">
+            <div class="graph-container">
+                <div id="cy"></div>
+                <div id="tooltip" class="tooltip"></div>
+            </div>
+
+            <aside class="sidebar">
+                <div id="nodeInfo">
+                    <h2>Информация об объекте</h2>
+                    <p class="hint">
+                        Выбери фильм, актёра или жанр.
+                        Здесь появятся подробности и рекомендации.
+                    </p>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <script>
+        let cy;
+        let selectedNode = null;
+        let requestNumber = 0;
+
+        const info = document.getElementById("nodeInfo");
+        const statusText = document.getElementById("statusText");
+        const tooltip = document.getElementById("tooltip");
+
+        function addDetail(container, label, value) {
+            if (value === null || value === undefined || value === "") {
+                return;
+            }
+
+            const p = document.createElement("p");
+            p.className = "detail";
+
+            const strong = document.createElement("strong");
+            strong.textContent = label + ": ";
+
+            p.append(
+                strong,
+                document.createTextNode(String(value))
+            );
+
+            container.appendChild(p);
+        }
+
+        function showDefaultInfo() {
+            info.replaceChildren();
+
+            const title = document.createElement("h2");
+            title.textContent = "Информация об объекте";
+
+            const hint = document.createElement("p");
+            hint.className = "hint";
+            hint.textContent =
+                "Нажми на кружочек, чтобы увидеть подробности.";
+
+            info.append(title, hint);
+        }
+
+        function showNodeInfo(node) {
+            info.replaceChildren();
+
+            const data = node.data();
+
+            const title = document.createElement("h2");
+            title.textContent = data.label;
+            info.appendChild(title);
+
+            const typeNames = {
+                film: "Фильм",
+                person: "Актёр или режиссёр",
+                genre: "Жанр"
+            };
+
+            addDetail(info, "Тип объекта", typeNames[data.type]);
+
+            if (data.type === "film") {
+                addDetail(info, "Год выпуска", data.year);
+                addDetail(info, "Страна", data.country);
+                addDetail(info, "Рейтинг", data.rating);
+                addDetail(info, "Описание", data.description);
+            }
+
+            if (data.type === "person") {
+                addDetail(info, "Профессия", data.personType);
+                addDetail(info, "Год рождения", data.birthYear);
+            }
+
+            const related = [];
+
+            node.connectedEdges().forEach(edge => {
+                if (!edge.visible()) return;
+
+                const other =
+                    edge.source().id() === node.id()
+                        ? edge.target()
+                        : edge.source();
+
+                if (!other.visible()) return;
+
+                related.push({
+                    name: other.data("label"),
+                    relation: edge.data("relation") || "",
+                    character: edge.data("character") || ""
+                });
+            });
+
+            addDetail(info, "Количество видимых связей", related.length);
+
+            if (related.length > 0) {
+                const heading = document.createElement("h3");
+                heading.textContent = "Связанные объекты";
+
+                const list = document.createElement("ul");
+                list.className = "related-list";
+
+                related.sort((a, b) =>
+                    a.name.localeCompare(b.name, "ru")
+                );
+
+                related.forEach(item => {
+                    const li = document.createElement("li");
+
+                    let text = item.name;
+
+                    if (item.relation) {
+                        text += " — " + item.relation;
+                    }
+
+                    if (item.character) {
+                        text += " (" + item.character + ")";
+                    }
+
+                    li.textContent = text;
+                    list.appendChild(li);
+                });
+
+                info.append(heading, list);
+            }
+
+            if (data.type === "film") {
+                const filmId = Number(
+                    node.id().replace("film_", "")
+                );
+
+                loadRecommendations(filmId);
+            }
+        }
+
+        async function loadRecommendations(filmId) {
+            const currentRequest = ++requestNumber;
+
+            const section = document.createElement("div");
+            section.className = "recommendations";
+
+            const heading = document.createElement("h3");
+            heading.textContent = "🎬 Рекомендуем посмотреть";
+
+            const message = document.createElement("p");
+            message.className = "hint";
+            message.textContent = "Подбираем похожие фильмы...";
+
+            section.append(heading, message);
+            info.appendChild(section);
+
+            try {
+                const response = await fetch(
+                    "/api/recommendations/" + filmId
+                );
+
+                if (!response.ok) {
+                    throw new Error("Ошибка сервера: " + response.status);
+                }
+
+                const data = await response.json();
+
+                if (currentRequest !== requestNumber) return;
+
+                message.remove();
+
+                if (!data.recommendations ||
+                    data.recommendations.length === 0) {
+                    const empty = document.createElement("p");
+                    empty.className = "hint";
+                    empty.textContent =
+                        "Похожие фильмы пока не найдены.";
+                    section.appendChild(empty);
+                    return;
+                }
+
+                data.recommendations.forEach(film => {
+                    const card = document.createElement("div");
+                    card.className = "recommendation-card";
+
+                    const button = document.createElement("button");
+                    button.className = "recommendation-title";
+                    button.textContent = film.title;
+
+                    button.addEventListener("click", function() {
+                        const node = cy.getElementById(
+                            "film_" + film.film_id
+                        );
+
+                        if (node.empty()) return;
+
+                        document.getElementById("filterSelect").value = "all";
+                        applyFilter();
+                        selectNode(node);
+
+                        cy.animate({
+                            fit: {
+                                eles: node,
+                                padding: 140
+                            },
+                            duration: 500
+                        });
+                    });
+
+                    const meta = document.createElement("p");
+                    meta.className = "recommendation-meta";
+                    meta.textContent =
+                        film.year + " · ⭐ " +
+                        (film.rating === null
+                            ? "Нет оценки"
+                            : film.rating);
+
+                    const score = document.createElement("span");
+                    score.className = "recommendation-score";
+                    score.textContent =
+                        "Сходство: " + film.score + " баллов";
+
+                    const reasons = document.createElement("ul");
+                    reasons.className = "recommendation-reasons";
+
+                    film.reasons.forEach(reason => {
+                        const li = document.createElement("li");
+                        li.textContent = reason;
+                        reasons.appendChild(li);
+                    });
+
+                    card.append(button, meta, score, reasons);
+                    section.appendChild(card);
+                });
+
+            } catch (error) {
+                if (currentRequest !== requestNumber) return;
+
+                message.textContent =
+                    "Ошибка загрузки рекомендаций: " +
+                    error.message;
+            }
+        }
+
+        function highlightConnections(node) {
+            cy.elements().removeClass("faded highlighted");
+
+            cy.elements(":visible").addClass("faded");
+
+            node.removeClass("faded");
+            node.addClass("highlighted");
+
+            const edges = node.connectedEdges().filter(
+                edge => edge.visible()
+            );
+
+            edges.removeClass("faded");
+            edges.connectedNodes().removeClass("faded");
+
+            statusText.textContent =
+                "Выбран объект: " + node.data("label");
+        }
+
+        function selectNode(node) {
+            selectedNode = node;
+            requestNumber++;
+
+            showNodeInfo(node);
+            highlightConnections(node);
+        }
+
+        function applyFilter() {
+            if (!cy) return;
+
+            const mode = document.getElementById("filterSelect").value;
+
+            cy.elements().removeClass("faded highlighted");
+            cy.nodes().show();
+
+            if (mode === "genres") {
+                cy.nodes('[type="person"]').hide();
+            }
+
+            if (mode === "people") {
+                cy.nodes('[type="genre"]').hide();
+            }
+
+            cy.edges().forEach(edge => {
+                if (edge.source().visible() &&
+                    edge.target().visible()) {
+                    edge.show();
+                } else {
+                    edge.hide();
+                }
+            });
+
+            if (selectedNode && selectedNode.visible()) {
+                selectNode(selectedNode);
+            } else {
+                selectedNode = null;
+                requestNumber++;
+                showDefaultInfo();
+
+                statusText.textContent =
+                    "Режим: " +
+                    document.getElementById("filterSelect")
+                        .selectedOptions[0].textContent;
+            }
+        }
+
+        function showTooltip(node) {
+            const pos = node.renderedPosition();
+
+            tooltip.textContent = node.data("label");
+            tooltip.style.display = "block";
+
+            const graphWidth = document.getElementById("cy").clientWidth;
+            const graphHeight = document.getElementById("cy").clientHeight;
+
+            const left = Math.max(
+                5,
+                Math.min(
+                    pos.x + 18,
+                    graphWidth - tooltip.offsetWidth - 5
+                )
+            );
+
+            const top = Math.max(
+                5,
+                Math.min(
+                    pos.y - 20,
+                    graphHeight - tooltip.offsetHeight - 5
+                )
+            );
+
+            tooltip.style.left = left + "px";
+            tooltip.style.top = top + "px";
+        }
+
+        async function loadGraph() {
+            try {
+                const response = await fetch("/api/graph");
+
+                if (!response.ok) {
+                    throw new Error("Ошибка сервера: " + response.status);
+                }
+
+                const data = await response.json();
+
+                cy = cytoscape({
+                    container: document.getElementById("cy"),
+
+                    elements: [
+                        ...data.nodes,
+                        ...data.edges
+                    ],
+
+                    style: [
+                        {
+                            selector: "node",
+                            style: {
+                                "background-color": "#7048ce",
+                                "width": 30,
+                                "height": 30,
+                                "label": "",
+                                "color": "#29243a",
+                                "font-size": "11px",
+                                "text-valign": "bottom",
+                                "text-margin-y": "8px",
+                                "text-wrap": "wrap",
+                                "text-max-width": "130px"
+                            }
+                        },
+                        {
+                            selector: 'node[type="film"]',
+                            style: {
+                                "background-color": "#7048ce",
+                                "width": 44,
+                                "height": 44
+                            }
+                        },
+                        {
+                            selector: 'node[type="person"]',
+                            style: {
+                                "background-color": "#36a879"
+                            }
+                        },
+                        {
+                            selector: 'node[type="genre"]',
+                            style: {
+                                "background-color": "#4b91e2",
+                                "width": 38,
+                                "height": 38
+                            }
+                        },
+                        {
+                            selector: "edge",
+                            style: {
+                                "width": 1.5,
+                                "line-color": "#c9c3d8",
+                                "curve-style": "bezier",
+                                "opacity": 0.65
+                            }
+                        },
+                        {
+                            selector: "node.highlighted",
+                            style: {
+                                "label": "data(label)",
+                                "border-width": 4,
+                                "border-color": "#f4ae46"
+                            }
+                        },
+                        {
+                            selector: "node.neighbor",
+                            style: {
+                                "label": "data(label)"
+                            }
+                        },
+                        {
+                            selector: ".faded",
+                            style: {
+                                "opacity": 0.10,
+                                "text-opacity": 0.10
+                            }
+                        }
+                    ],
+
+                    layout: {
+                        name: "cose",
+                        animate: false,
+                        nodeRepulsion: 250000,
+                        idealEdgeLength: 180,
+                        edgeElasticity: 100,
+                        gravity: 0.25,
+                        numIter: 1500,
+                        padding: 70
+                    },
+
+                    wheelSensitivity: 0.2
+                });
+
+                cy.on("tap", "node", function(event) {
+                    selectNode(event.target);
+
+                    cy.nodes().removeClass("neighbor");
+
+                    event.target.neighborhood("node")
+                        .addClass("neighbor");
+                });
+
+                cy.on("mouseover", "node", function(event) {
+                    showTooltip(event.target);
+                });
+
+                cy.on("mouseout", "node", function() {
+                    tooltip.style.display = "none";
+                });
+
+                cy.on("pan zoom", function() {
+                    tooltip.style.display = "none";
+                });
+
+            } catch (error) {
+                info.textContent =
+                    "Не удалось загрузить карту: " + error.message;
+            }
+        }
+
+        function searchNode() {
+            if (!cy) return;
+
+            const query = document.getElementById("searchInput")
+                .value.toLowerCase().trim();
+
+            if (!query) return;
+
+            const matches = cy.nodes().filter(node =>
+                node.visible() &&
+                node.data("label").toLowerCase().includes(query)
+            );
+
+            if (matches.length === 0) {
+                statusText.textContent = "Ничего не найдено.";
+                return;
+            }
+
+            selectNode(matches[0]);
+
+            cy.nodes().removeClass("neighbor");
+            matches[0].neighborhood("node").addClass("neighbor");
+
+            cy.animate({
+                fit: {
+                    eles: matches[0],
+                    padding: 120
+                },
+                duration: 500
+            });
+        }
+
+        document.getElementById("searchButton")
+            .addEventListener("click", searchNode);
+
+        document.getElementById("searchInput")
+            .addEventListener("keydown", function(event) {
+                if (event.key === "Enter") searchNode();
+            });
+
+        document.getElementById("filterSelect")
+            .addEventListener("change", applyFilter);
+
+        document.getElementById("resetButton")
+            .addEventListener("click", function() {
+                if (!cy) return;
+
+                selectedNode = null;
+                requestNumber++;
+
+                document.getElementById("filterSelect").value = "all";
+                document.getElementById("searchInput").value = "";
+
+                cy.nodes().show();
+                cy.edges().show();
+
+                cy.elements().removeClass(
+                    "faded highlighted neighbor"
+                );
+
+                cy.fit(undefined, 40);
+                showDefaultInfo();
+
+                statusText.textContent =
+                    "Показаны все объекты и связи.";
+            });
+
+        document.getElementById("zoomInButton")
+            .addEventListener("click", function() {
+                if (!cy) return;
+
+                cy.zoom({
+                    level: Math.min(cy.zoom() * 1.3, cy.maxZoom()),
+                    renderedPosition: {
+                        x: cy.width() / 2,
+                        y: cy.height() / 2
+                    }
+                });
+            });
+
+        document.getElementById("zoomOutButton")
+            .addEventListener("click", function() {
+                if (!cy) return;
+
+                cy.zoom({
+                    level: Math.max(cy.zoom() / 1.3, cy.minZoom()),
+                    renderedPosition: {
+                        x: cy.width() / 2,
+                        y: cy.height() / 2
+                    }
+                });
+            });
+
+        loadGraph();
+    </script>
+</body>
+</html>
